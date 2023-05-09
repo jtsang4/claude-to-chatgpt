@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "claude-to-openai"
+version = "0.1.0"
+description = ""
+authors = ["jtsang4 <wtzeng1@gmail.com>"]
+readme = "README.md"
+packages = [{include = "claude_to_openai"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.30.0"
+tiktoken = "^0.4.0"
+fastapi = "^0.95.1"
+uvicorn = "^0.22.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
