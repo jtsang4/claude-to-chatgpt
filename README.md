@@ -47,13 +47,13 @@ The OpenAI Chat API has a simpler `/v1/chat/completions` endpoint which takes:
 
 ```json
 {
-	"model": "gpt-3.5-turbo", // will be ignored if you pass this param
-	"messages": [
-		{
-			"role": "user",
-			"content": "Hello, AI."
-		}
-	],
+  "model": "gpt-3.5-turbo", // will be ignored if you pass this param
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, AI."
+    }
+  ],
   "max_tokens": 100,
   "temperature": 1,
   "stream": true
