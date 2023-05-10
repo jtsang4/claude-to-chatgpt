@@ -17,7 +17,7 @@ docker build . -t claude-to-chatgpt
 docker run -p 8000:8000 claude-to-chatgpt
 ```
 
-#### Using Docker Compose 
+#### Using Docker Compose (TODO)
 
 ```bash
 docker-compose up
