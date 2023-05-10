@@ -13,11 +13,10 @@ You can run this project using Docker or Docker Compose:
 ### Using Docker
 
 ```bash
-docker build . -t claude-to-chatgpt
-docker run -p 8000:8000 claude-to-chatgpt
+docker run -p 8000:8000 wtzeng/claude-to-chatgpt:latest
 ```
 
-#### Using Docker Compose (TODO)
+#### Using Docker Compose
 
 ```bash
 docker-compose up

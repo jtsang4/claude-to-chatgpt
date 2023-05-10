@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  claude-to-chatgpt:
+    container_name: claude-to-chatgpt
+    image: wtzeng/claude-to-chatgpt:latest
+    restart: unless-stopped
+    environment:
+      CLAUDE_BASE_URL: "https://api.anthropic.com" # Claude API base URL
+      # LOG_LEVEL: "info" # log level
+    ports:
+      - "8000:8000"
