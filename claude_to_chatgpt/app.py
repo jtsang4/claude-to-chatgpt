@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from claude_to_chatgpt.adapter import ClaudeAdapter
 import json
 import os
@@ -14,6 +15,15 @@ logger.debug(f"claude_base_url: {CLAUDE_BASE_URL}")
 adapter = ClaudeAdapter(CLAUDE_BASE_URL)
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods, including OPTIONS
+    allow_headers=["*"],
+)
 
 @app.post("/v1/chat/completions")
 async def chat(request: Request):

@@ -12,6 +12,7 @@ tiktoken = "^0.4.0"
 fastapi = "^0.95.1"
 uvicorn = "^0.22.0"
 httpx = "^0.24.0"
+socksio = "^1.0.0"
 
 
 [build-system]
