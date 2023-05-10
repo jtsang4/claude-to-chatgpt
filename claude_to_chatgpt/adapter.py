@@ -78,7 +78,7 @@ class ClaudeAdapter:
             "choices": [
                 {
                     "delta": {
-                        # "role": "assistant",
+                        "role": "assistant",
                         "content": claude_response.get("completion", "").removeprefix(prev_decoded_response.get("completion", "")),
                     },
                     "index": 0,
@@ -136,6 +136,7 @@ class ClaudeAdapter:
                 async for line in response.aiter_lines():
                     if line:
                         if line == "data: [DONE]":
+                            yield "[DONE]"
                             break
                         stripped_line = line.lstrip("data:")
                         if stripped_line:

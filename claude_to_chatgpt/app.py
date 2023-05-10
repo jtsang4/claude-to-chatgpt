@@ -34,6 +34,9 @@ async def chat(request: Request):
     if openai_params.get("stream", False):
         async def generate():
             async for response in adapter.chat(request):
+                if response == "[DONE]":
+                    yield "data: [DONE]"
+                    break
                 yield f"data: {json.dumps(response)}\n\n"
         return StreamingResponse(generate(), media_type="text/event-stream")
     else:
