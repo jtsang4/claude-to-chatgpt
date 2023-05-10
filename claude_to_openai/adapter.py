@@ -1,7 +1,10 @@
-import requests
+import httpx
 import time
 import json
+import os
+from fastapi import Request
 from claude_to_openai.util import num_tokens_from_string
+from claude_to_openai.logger import logger
 
 role_map = {
     "system": "Human",
@@ -15,9 +18,16 @@ stop_reason_map = {
 }
 
 class ClaudeAdapter:
-    def __init__(self, claude_api_key, claude_base_url="https://api.anthropic.com"):
-        self.claude_api_key = claude_api_key
+    def __init__(self, claude_base_url="https://api.anthropic.com"):
+        self.claude_api_key = os.getenv("CLAUDE_API_KEY", None)
         self.claude_base_url = claude_base_url
+
+    def get_api_key(self, headers):
+        auth_header = headers.get("authorization", None)
+        if auth_header:
+            return auth_header.split(" ")[1]
+        else:
+            return self.claude_api_key
 
     def convert_messages_to_prompt(self, messages):
         prompt = ""
@@ -26,11 +36,10 @@ class ClaudeAdapter:
             content = message["content"]
             transformed_role = role_map[role]
             prompt += f"\n\n{transformed_role.capitalize()}: {content}"
-        prompt += "\n\nAssistant:"
+        prompt += "\n\nAssistant: "
         return prompt
 
     def openai_to_claude_params(self, openai_params):
-        model = openai_params["model"]
         messages = openai_params["messages"]
 
         prompt = self.convert_messages_to_prompt(messages)
@@ -38,16 +47,27 @@ class ClaudeAdapter:
         claude_params = {
             "model": "claude-v1.3",
             "prompt": prompt,
-            "max_tokens_to_sample": openai_params["max_tokens"],
-            "stop_sequences": openai_params["stop"],
+            "max_tokens_to_sample": 9016,
         }
+
+        if (openai_params.get("max_tokens")):
+            claude_params["max_tokens_to_sample"] = openai_params["max_tokens"]
+
+        if (openai_params.get("stop")):
+            claude_params["stop_sequences"] = openai_params.get("stop")
+
+        if (openai_params.get("temperature")):
+            claude_params["temperature"] = openai_params.get("temperature")
+        
+        if (openai_params.get('stream')):
+            claude_params["stream"] = True
 
         return claude_params
 
     def claude_to_openai_response(self, claude_response):
         completion_tokens = num_tokens_from_string(claude_response["completion"])
         openai_response = {
-            "id": None,
+            "id": "chatcmpl-123",
             "object": "chat.completion",
             "created": int(time.time()),
             "usage": {
@@ -59,52 +79,49 @@ class ClaudeAdapter:
                 {
                     "message": {
                         "role": "assistant",
-                        "content": claude_response["completion"],
+                        "content": claude_response.get("completion", ""),
                     },
                     "index": 0,
-                    "finish_reason": stop_reason_map[claude_response["stop_reason"]],
+                    "finish_reason": stop_reason_map[claude_response.get("stop_reason")] if claude_response.get("stop_reason") else None,
                 }
             ],
         }
 
         return openai_response
 
-    def chat(self, openai_params):
+    async def chat(self, request: Request):
+        openai_params = await request.json()
+        headers = request.headers
         claude_params = self.openai_to_claude_params(openai_params)
+        api_key = self.get_api_key(headers)
 
-        if claude_params["stream"]:
-            response = requests.post(
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
                 f"{self.claude_base_url}/v1/complete",
                 headers={
-                    "x-api-key": self.claude_api_key,
-                    "content-type": "application/json",
-                },
-                json=claude_params,
-                stream=True,
-            )
-
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode("utf-8")
-                    if decoded_line == "data: [DONE]":
-                        break
-                    else:
-                        claude_response = json.loads(decoded_line[6:])
-                        openai_response = self.claude_to_openai_response(claude_response)
-                        yield openai_response
-        else:
-            response = requests.post(
-                f"{self.claude_base_url}/v1/complete",
-                headers={
-                    "x-api-key": self.claude_api_key,
+                    "x-api-key": api_key,
                     "content-type": "application/json",
                 },
                 json=claude_params,
             )
-
-            if response.status_code == 200:
+            if response.is_error:
+                raise Exception(f"Error: {response.status_code}")
+            if claude_params.get("stream"):
+                async for line in response.aiter_lines():
+                    if line:
+                        if line == "data: [DONE]":
+                            break
+                        stripped_line = line.lstrip("data:")
+                        if stripped_line:
+                            try:
+                                decoded_line = json.loads(stripped_line)
+                                # yield decoded_line
+                                openai_response = self.claude_to_openai_response(decoded_line)
+                                yield openai_response
+                            except json.JSONDecodeError as e:
+                                logger.debug(f"Error decoding JSON: {e}")  # Debug output
+                                logger.debug(f"Failed to decode line: {stripped_line}")  # Debug output
+            else:
                 claude_response = response.json()
                 openai_response = self.claude_to_openai_response(claude_response)
-                return openai_response
-            else:
-                raise Exception(f"Error {response.status_code}: {response.text}")
+                yield openai_response
