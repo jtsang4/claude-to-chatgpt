@@ -64,10 +64,35 @@ class ClaudeAdapter:
 
         return claude_params
 
+    def claude_to_chatgpt_response_stream(self, claude_response, prev_decoded_response):
+        completion_tokens = num_tokens_from_string(claude_response["completion"])
+        openai_response = {
+            "id": f"chatcmpl-{str(time.time())}",
+            "object": "chat.completion.chunk",
+            "created": int(time.time()),
+            "usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": completion_tokens,
+                "total_tokens": completion_tokens,
+            },
+            "choices": [
+                {
+                    "delta": {
+                        # "role": "assistant",
+                        "content": claude_response.get("completion", "").removeprefix(prev_decoded_response.get("completion", "")),
+                    },
+                    "index": 0,
+                    "finish_reason": stop_reason_map[claude_response.get("stop_reason")] if claude_response.get("stop_reason") else None,
+                }
+            ],
+        }
+
+        return openai_response
+
     def claude_to_chatgpt_response(self, claude_response):
         completion_tokens = num_tokens_from_string(claude_response["completion"])
         openai_response = {
-            "id": "chatcmpl-123",
+            "id": f"chatcmpl-{str(time.time())}",
             "object": "chat.completion",
             "created": int(time.time()),
             "usage": {
@@ -107,6 +132,7 @@ class ClaudeAdapter:
             if response.is_error:
                 raise Exception(f"Error: {response.status_code}")
             if claude_params.get("stream"):
+                prev_decoded_line = {}
                 async for line in response.aiter_lines():
                     if line:
                         if line == "data: [DONE]":
@@ -116,7 +142,8 @@ class ClaudeAdapter:
                             try:
                                 decoded_line = json.loads(stripped_line)
                                 # yield decoded_line
-                                openai_response = self.claude_to_chatgpt_response(decoded_line)
+                                openai_response = self.claude_to_chatgpt_response_stream(decoded_line, prev_decoded_line)
+                                prev_decoded_line = decoded_line
                                 yield openai_response
                             except json.JSONDecodeError as e:
                                 logger.debug(f"Error decoding JSON: {e}")  # Debug output
