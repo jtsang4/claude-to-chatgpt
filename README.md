@@ -1,4 +1,4 @@
-# Claude to OpenAI
+# Claude to ChatGPT
 
 This project converts the API of Anthropic's Claude model to the OpenAI Chat API format.
 
