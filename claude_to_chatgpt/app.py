@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
-from claude_to_openai.adapter import ClaudeAdapter
+from claude_to_chatgpt.adapter import ClaudeAdapter
 import json
 import os
-from claude_to_openai.logger import logger
+from claude_to_chatgpt.logger import logger
 
 CLAUDE_BASE_URL = os.getenv("CLAUDE_BASE_URL", "https://api.anthropic.com")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "info")

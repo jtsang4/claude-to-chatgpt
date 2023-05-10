@@ -18,4 +18,4 @@ RUN poetry install --only main
 EXPOSE 8000
 
 # Set the command to run the application
-CMD ["poetry", "run", "python", "claude_to_openai/app.py"]
+CMD ["poetry", "run", "python", "claude_to_chatgpt/app.py"]

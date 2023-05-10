@@ -3,8 +3,8 @@ import time
 import json
 import os
 from fastapi import Request
-from claude_to_openai.util import num_tokens_from_string
-from claude_to_openai.logger import logger
+from claude_to_chatgpt.util import num_tokens_from_string
+from claude_to_chatgpt.logger import logger
 
 role_map = {
     "system": "Human",
@@ -64,7 +64,7 @@ class ClaudeAdapter:
 
         return claude_params
 
-    def claude_to_openai_response(self, claude_response):
+    def claude_to_chatgpt_response(self, claude_response):
         completion_tokens = num_tokens_from_string(claude_response["completion"])
         openai_response = {
             "id": "chatcmpl-123",
@@ -116,12 +116,12 @@ class ClaudeAdapter:
                             try:
                                 decoded_line = json.loads(stripped_line)
                                 # yield decoded_line
-                                openai_response = self.claude_to_openai_response(decoded_line)
+                                openai_response = self.claude_to_chatgpt_response(decoded_line)
                                 yield openai_response
                             except json.JSONDecodeError as e:
                                 logger.debug(f"Error decoding JSON: {e}")  # Debug output
                                 logger.debug(f"Failed to decode line: {stripped_line}")  # Debug output
             else:
                 claude_response = response.json()
-                openai_response = self.claude_to_openai_response(claude_response)
+                openai_response = self.claude_to_chatgpt_response(claude_response)
                 yield openai_response

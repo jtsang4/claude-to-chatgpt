@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "claude-to-openai"
+name = "claude-to-chatgpt"
 version = "0.1.0"
 description = ""
 authors = ["jtsang4 <wtzeng1@gmail.com>"]
