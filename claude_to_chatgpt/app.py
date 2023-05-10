@@ -25,7 +25,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/v1/chat/completions")
+@app.api_route(
+    "/v1/chat/completions",
+    methods=["POST", "OPTIONS"],
+)
 async def chat(request: Request):
     openai_params = await request.json()
     if openai_params.get("stream", False):
