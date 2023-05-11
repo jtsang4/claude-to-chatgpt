@@ -155,7 +155,7 @@ class ClaudeAdapter:
                     if response.is_error:
                         raise Exception(f"Error: {response.status_code}")
                     prev_decoded_line = {}
-                    async for line in response.aiter_text():
+                    async for line in response.aiter_lines():
                         if line:
                             if line == "data: [DONE]":
                                 yield "[DONE]"
