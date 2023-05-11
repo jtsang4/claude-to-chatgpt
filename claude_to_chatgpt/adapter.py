@@ -128,43 +128,54 @@ class ClaudeAdapter:
         api_key = self.get_api_key(headers)
 
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.claude_base_url}/v1/complete",
-                headers={
-                    "x-api-key": api_key,
-                    "content-type": "application/json",
-                },
-                json=claude_params,
-            )
-            if response.is_error:
-                raise Exception(f"Error: {response.status_code}")
-            if claude_params.get("stream"):
-                prev_decoded_line = {}
-                async for line in response.aiter_lines():
-                    if line:
-                        if line == "data: [DONE]":
-                            yield "[DONE]"
-                            break
-                        stripped_line = line.lstrip("data:")
-                        if stripped_line:
-                            try:
-                                decoded_line = json.loads(stripped_line)
-                                # yield decoded_line
-                                openai_response = (
-                                    self.claude_to_chatgpt_response_stream(
-                                        decoded_line, prev_decoded_line
-                                    )
-                                )
-                                prev_decoded_line = decoded_line
-                                yield openai_response
-                            except json.JSONDecodeError as e:
-                                logger.debug(
-                                    f"Error decoding JSON: {e}"
-                                )  # Debug output
-                                logger.debug(
-                                    f"Failed to decode line: {stripped_line}"
-                                )  # Debug output
-            else:
+            if not claude_params.get("stream", False):
+                response = await client.post(
+                    f"{self.claude_base_url}/v1/complete",
+                    headers={
+                        "x-api-key": api_key,
+                        "content-type": "application/json",
+                    },
+                    json=claude_params,
+                )
+                if response.is_error:
+                    raise Exception(f"Error: {response.status_code}")
                 claude_response = response.json()
                 openai_response = self.claude_to_chatgpt_response(claude_response)
                 yield openai_response
+            else:
+                async with client.stream(
+                    "POST",
+                    f"{self.claude_base_url}/v1/complete",
+                    headers={
+                        "x-api-key": api_key,
+                        "content-type": "application/json",
+                    },
+                    json=claude_params,
+                ) as response:
+                    if response.is_error:
+                        raise Exception(f"Error: {response.status_code}")
+                    prev_decoded_line = {}
+                    async for line in response.aiter_text():
+                        if line:
+                            if line == "data: [DONE]":
+                                yield "[DONE]"
+                                break
+                            stripped_line = line.lstrip("data:")
+                            if stripped_line:
+                                try:
+                                    decoded_line = json.loads(stripped_line)
+                                    # yield decoded_line
+                                    openai_response = (
+                                        self.claude_to_chatgpt_response_stream(
+                                            decoded_line, prev_decoded_line
+                                        )
+                                    )
+                                    prev_decoded_line = decoded_line
+                                    yield openai_response
+                                except json.JSONDecodeError as e:
+                                    logger.debug(
+                                        f"Error decoding JSON: {e}"
+                                    )  # Debug output
+                                    logger.debug(
+                                        f"Failed to decode line: {stripped_line}"
+                                    )  # Debug output
