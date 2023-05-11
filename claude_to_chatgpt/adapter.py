@@ -5,6 +5,7 @@ import os
 from fastapi import Request
 from claude_to_chatgpt.util import num_tokens_from_string
 from claude_to_chatgpt.logger import logger
+from claude_to_chatgpt.models import model_map
 
 role_map = {
     "system": "Human",
@@ -41,14 +42,15 @@ class ClaudeAdapter:
         return prompt
 
     def openai_to_claude_params(self, openai_params):
+        model = model_map.get(openai_params["model"], "claude-v1.3-100k")
         messages = openai_params["messages"]
 
         prompt = self.convert_messages_to_prompt(messages)
 
         claude_params = {
-            "model": "claude-v1.3",
+            "model": model,
             "prompt": prompt,
-            "max_tokens_to_sample": 9016,
+            "max_tokens_to_sample": 100000 if model == "claude-v1.3-100k" else 9016,
         }
 
         if openai_params.get("max_tokens"):

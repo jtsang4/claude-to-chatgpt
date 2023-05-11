@@ -4,19 +4,21 @@ This project converts the API of Anthropic's Claude model to the OpenAI Chat API
 
 * ✨ Call Claude API like OpenAI ChatGPT API
 * 💦 Support streaming response
-* 🐻 Only support `claude-v1.3` model currently
+* 🐻 Support `claude-v1.3`(gpt-3.5-turbo-0301), `claude-v1.3-100k`(gpt-3.5-turbo, gpt-4, gpt-4-0314) model
 
 ## Getting Started
 
 You can run this project using Docker or Docker Compose:
 
-### Using Docker
+### Deployment
+
+#### Using Docker
 
 ```bash
 docker run -p 8000:8000 wtzeng/claude-to-chatgpt:latest
 ```
 
-### Using Docker Compose
+#### Using Docker Compose
 
 ```bash
 docker-compose up
@@ -24,6 +26,20 @@ docker-compose up
 
 
 The API will then be available at http://localhost:8000. API endpoint: `/v1/chat/completions`
+
+### Usage
+
+When you input the model parameter as `gpt-3.5-turbo-0301`, it will be substituted with `claude-v1.3`. otherwise, `claude-v1.3-100k` will be utilized.
+
+```bash
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $CLAUDE_API_KEY" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
 
 ## Conversion Details
 
