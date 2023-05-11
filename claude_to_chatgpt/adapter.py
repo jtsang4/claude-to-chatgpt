@@ -17,6 +17,7 @@ stop_reason_map = {
     "max_tokens": "length",
 }
 
+
 class ClaudeAdapter:
     def __init__(self, claude_base_url="https://api.anthropic.com"):
         self.claude_api_key = os.getenv("CLAUDE_API_KEY", None)
@@ -50,16 +51,16 @@ class ClaudeAdapter:
             "max_tokens_to_sample": 9016,
         }
 
-        if (openai_params.get("max_tokens")):
+        if openai_params.get("max_tokens"):
             claude_params["max_tokens_to_sample"] = openai_params["max_tokens"]
 
-        if (openai_params.get("stop")):
+        if openai_params.get("stop"):
             claude_params["stop_sequences"] = openai_params.get("stop")
 
-        if (openai_params.get("temperature")):
+        if openai_params.get("temperature"):
             claude_params["temperature"] = openai_params.get("temperature")
-        
-        if (openai_params.get('stream')):
+
+        if openai_params.get("stream"):
             claude_params["stream"] = True
 
         return claude_params
@@ -79,10 +80,14 @@ class ClaudeAdapter:
                 {
                     "delta": {
                         "role": "assistant",
-                        "content": claude_response.get("completion", "").removeprefix(prev_decoded_response.get("completion", "")),
+                        "content": claude_response.get("completion", "").removeprefix(
+                            prev_decoded_response.get("completion", "")
+                        ),
                     },
                     "index": 0,
-                    "finish_reason": stop_reason_map[claude_response.get("stop_reason")] if claude_response.get("stop_reason") else None,
+                    "finish_reason": stop_reason_map[claude_response.get("stop_reason")]
+                    if claude_response.get("stop_reason")
+                    else None,
                 }
             ],
         }
@@ -107,7 +112,9 @@ class ClaudeAdapter:
                         "content": claude_response.get("completion", ""),
                     },
                     "index": 0,
-                    "finish_reason": stop_reason_map[claude_response.get("stop_reason")] if claude_response.get("stop_reason") else None,
+                    "finish_reason": stop_reason_map[claude_response.get("stop_reason")]
+                    if claude_response.get("stop_reason")
+                    else None,
                 }
             ],
         }
@@ -143,12 +150,20 @@ class ClaudeAdapter:
                             try:
                                 decoded_line = json.loads(stripped_line)
                                 # yield decoded_line
-                                openai_response = self.claude_to_chatgpt_response_stream(decoded_line, prev_decoded_line)
+                                openai_response = (
+                                    self.claude_to_chatgpt_response_stream(
+                                        decoded_line, prev_decoded_line
+                                    )
+                                )
                                 prev_decoded_line = decoded_line
                                 yield openai_response
                             except json.JSONDecodeError as e:
-                                logger.debug(f"Error decoding JSON: {e}")  # Debug output
-                                logger.debug(f"Failed to decode line: {stripped_line}")  # Debug output
+                                logger.debug(
+                                    f"Error decoding JSON: {e}"
+                                )  # Debug output
+                                logger.debug(
+                                    f"Failed to decode line: {stripped_line}"
+                                )  # Debug output
             else:
                 claude_response = response.json()
                 openai_response = self.claude_to_chatgpt_response(claude_response)

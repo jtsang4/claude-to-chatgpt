@@ -5,6 +5,7 @@ from claude_to_chatgpt.adapter import ClaudeAdapter
 import json
 import os
 from claude_to_chatgpt.logger import logger
+from claude_to_chatgpt.models import models_list
 
 CLAUDE_BASE_URL = os.getenv("CLAUDE_BASE_URL", "https://api.anthropic.com")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
@@ -25,6 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.api_route(
     "/v1/chat/completions",
     methods=["POST", "OPTIONS"],
@@ -32,19 +34,29 @@ app.add_middleware(
 async def chat(request: Request):
     openai_params = await request.json()
     if openai_params.get("stream", False):
+
         async def generate():
             async for response in adapter.chat(request):
                 if response == "[DONE]":
                     yield "data: [DONE]"
                     break
                 yield f"data: {json.dumps(response)}\n\n"
+
         return StreamingResponse(generate(), media_type="text/event-stream")
     else:
         openai_response = None
-        async for response in adapter.chat(request):
-            openai_response = response
+        response = adapter.chat(request)
+        openai_response = await response.__anext__()
         return JSONResponse(content=openai_response)
+
+
+@app.route("/v1/models", methods=["GET"])
+async def models(request: Request):
+    # return a dict with key "object" and "data", "object" value is "list", "data" values is models list
+    return JSONResponse(content={"object": "list", "data": models_list})
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app:app", host="0.0.0.0", port=PORT, log_level=LOG_LEVEL)
