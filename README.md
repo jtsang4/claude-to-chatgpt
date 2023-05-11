@@ -4,7 +4,7 @@ This project converts the API of Anthropic's Claude model to the OpenAI Chat API
 
 * ✨ Call Claude API like OpenAI ChatGPT API
 * 💦 Support streaming response
-* 🐻 Support `claude-v1.3`(gpt-3.5-turbo-0301), `claude-v1.3-100k`(gpt-3.5-turbo, gpt-4, gpt-4-0314) model
+* 🐻 Support `claude-v1.3`, `claude-v1.3-100k` models
 
 ## Getting Started
 
