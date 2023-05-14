@@ -61,7 +61,7 @@ The API will then be available at http://localhost:8000. API endpoint: `/v1/chat
 
 ### Usage
 
-When you input the model parameter as `gpt-3.5-turbo-0301`, it will be substituted with `claude-v1.3`. otherwise, `claude-v1.3-100k` will be utilized.
+When you input the model parameter as `gpt-3.5-turbo` or `gpt-3.5-turbo-0301`, it will be substituted with `claude-v1.3`. otherwise, `claude-v1.3-100k` will be utilized.
 
 
 #### GUI

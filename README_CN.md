@@ -60,7 +60,7 @@ docker-compose up
 
 ### 使用方法
 
-当您将模型参数 `model` 为 `gpt-3.5-turbo-0301` 时，它将替换为 `claude-v1.3`。否则，将使用 `claude-v1.3-100k`。
+当您将模型参数 `model` 为 `gpt-3.5-turbo` 或 `gpt-3.5-turbo-0301` 时，它将替换为 `claude-v1.3`。否则，将使用 `claude-v1.3-100k`。
 
 
 #### 图形界面软件

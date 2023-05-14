@@ -98,7 +98,7 @@ models_list = [
 ]
 
 model_map = {
-    "gpt-3.5-turbo": "claude-v1.3-100k",
+    "gpt-3.5-turbo": "claude-v1.3",
     "gpt-3.5-turbo-0301": "claude-v1.3",
     "gpt-4": "claude-v1.3-100k",
     "gpt-4-0314": "claude-v1.3-100k",
