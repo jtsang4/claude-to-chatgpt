@@ -1,4 +1,24 @@
-# Claude to ChatGPT
+<h4 align="right">
+  <strong>English</strong> | <a href="https://github.com/jtsang4/claude-to-chatgpt/blob/main/docs/README_CN.md">简体中文</a>
+</h4>
+
+<div>
+  <h1 align="center">Claude to ChatGPT</h1>
+  <p align="center">
+    <a href="https://github.com/jtsang4/claude-to-chatgpt/releases" target="_blank">
+        <img src="https://github.com/jtsang4/claude-to-chatgpt/actions/workflows/docker.yaml/badge.svg" alt="release">
+    </a>
+    <a href="https://github.com/jtsang4/claude-to-chatgpt/releases">
+        <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/jtsang4/claude-to-chatgpt?style=flat">
+    </a>
+    <a href="https://github.com/jtsang4/claude-to-chatgpt/releases">
+        <img alt="GitHub Repo Badge" src="https://img.shields.io/badge/anthropic-claude-orange?style=flat">
+    </a>
+    <a href="https://github.com/jtsang4/claude-to-chatgpt/releases">
+        <img alt="GitHub Repo Language" src="https://img.shields.io/badge/langurage-js/py-brightgreen?style=flat&color=blue">
+    </a>
+  </p>
+</div>
 
 This project converts the API of Anthropic's Claude model to the OpenAI Chat API format.
 
@@ -9,7 +29,7 @@ This project converts the API of Anthropic's Claude model to the OpenAI Chat API
 
 ## Getting Started
 
-You can run this project using Docker or Docker Compose:
+You can run this project using Cloudflare Workers or Docker:
 
 ### Deployment
 
@@ -22,7 +42,7 @@ By using Cloudflare Workers, you don't need a server to deploy this project.
 3. Save and deploy
 4. (Optional) Set custom domain for your Cloudflare Worker
 
-The Cloudfalre Workers support 100k requests a day, If you need to call more than that, you can use docker to deploy as below.
+The Cloudfalre Workers support 100k requests a day, If you need to call more than that, you can use Docker to deploy as below.
 
 #### Using Docker
 
@@ -70,7 +90,7 @@ The Claude Completion API has an endpoint `/v1/complete` which takes the followi
 
 And returns JSON with choices and completions.
 
-The OpenAI Chat API has a simpler `/v1/chat/completions` endpoint which takes:
+The OpenAI Chat API has a similar `/v1/chat/completions` endpoint which takes:
 
 ```json
 {
