@@ -100,7 +100,7 @@ OpenAI Chat API 有一个相似的 `/v1/chat/completions` API，它接受以下�
 
 ```json
 {
-  "model": "gpt-3.5-turbo", // 如果传递此参数，将被忽略
+  "model": "gpt-3.5-turbo",
   "messages": [
     {
       "role": "user",

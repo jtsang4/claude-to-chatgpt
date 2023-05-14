@@ -104,7 +104,7 @@ The OpenAI Chat API has a similar `/v1/chat/completions` endpoint which takes:
 
 ```json
 {
-  "model": "gpt-3.5-turbo", // will be ignored if you pass this param
+  "model": "gpt-3.5-turbo",
   "messages": [
     {
       "role": "user",
