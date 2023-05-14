@@ -1,4 +1,4 @@
-const version = '0.3.0';
+const version = '0.3.1';
 
 addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(event.request));
@@ -45,6 +45,7 @@ function claudeToChatGPTResponse(claudeResponse, stream = false) {
   const result = {
     id: `chatcmpl-${timestamp}`,
     created: timestamp,
+    model: 'gpt-3.5-turbo-0301',
     usage: {
       prompt_tokens: 0,
       completion_tokens: completionTokens,

@@ -73,6 +73,7 @@ class ClaudeAdapter:
             "id": f"chatcmpl-{str(time.time())}",
             "object": "chat.completion.chunk",
             "created": int(time.time()),
+            "model": "gpt-3.5-turbo-0301",
             "usage": {
                 "prompt_tokens": 0,
                 "completion_tokens": completion_tokens,
@@ -102,6 +103,7 @@ class ClaudeAdapter:
             "id": f"chatcmpl-{str(time.time())}",
             "object": "chat.completion",
             "created": int(time.time()),
+            "model": "gpt-3.5-turbo-0301",
             "usage": {
                 "prompt_tokens": 0,
                 "completion_tokens": completion_tokens,
