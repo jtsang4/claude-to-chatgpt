@@ -63,6 +63,16 @@ The API will then be available at http://localhost:8000. API endpoint: `/v1/chat
 
 When you input the model parameter as `gpt-3.5-turbo-0301`, it will be substituted with `claude-v1.3`. otherwise, `claude-v1.3-100k` will be utilized.
 
+
+#### GUI
+
+Here are some recommended GUI software that supports this project:
+
+* [Bin-Huang/chatbox](https://github.com/Bin-Huang/chatbox)
+* [Yidadaa/ChatGPT-Next-Web](https://github.com/Yidadaa/ChatGPT-Next-Web)
+
+#### CLI
+
 ```bash
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \

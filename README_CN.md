@@ -62,6 +62,16 @@ docker-compose up
 
 当您将模型参数 `model` 为 `gpt-3.5-turbo-0301` 时，它将替换为 `claude-v1.3`。否则，将使用 `claude-v1.3-100k`。
 
+
+#### 图形界面软件
+
+以下是一些支持使用本项目的推荐 GUI 软件：
+
+* [Bin-Huang/chatbox](https://github.com/Bin-Huang/chatbox)
+* [Yidadaa/ChatGPT-Next-Web](https://github.com/Yidadaa/ChatGPT-Next-Web)
+
+#### 命令行调用
+
 ```bash
 curl http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
