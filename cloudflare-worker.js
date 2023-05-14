@@ -1,3 +1,5 @@
+const version = '0.3.0';
+
 addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(event.request));
 });
@@ -36,13 +38,12 @@ function getAPIKey(headers) {
   return CLAUDE_API_KEY;
 }
 
-function claudeToChatGPTResponse(claudeResponse) {
+function claudeToChatGPTResponse(claudeResponse, stream = false) {
   const completion = claudeResponse['completion'];
   const timestamp = Math.floor(Date.now() / 1000);
   const completionTokens = completion.split(' ').length;
-  return {
+  const result = {
     id: `chatcmpl-${timestamp}`,
-    object: 'chat.completion',
     created: timestamp,
     usage: {
       prompt_tokens: 0,
@@ -51,10 +52,6 @@ function claudeToChatGPTResponse(claudeResponse) {
     },
     choices: [
       {
-        message: {
-          role: 'assistant',
-          content: completion,
-        },
         index: 0,
         finish_reason: claudeResponse['stop_reason']
           ? stop_reason_map[claudeResponse['stop_reason']]
@@ -62,6 +59,64 @@ function claudeToChatGPTResponse(claudeResponse) {
       },
     ],
   };
+  const message = {
+    role: 'assistant',
+    content: completion,
+  };
+  if (!stream) {
+    result.object = 'chat.completion';
+    result.choices[0].message = message;
+  } else {
+    result.object = 'chat.completion.chunk';
+    result.choices[0].delta = message;
+  }
+  return result;
+}
+
+async function streamJsonResponseBodies(response, writable) {
+  const reader = response.body.getReader();
+  const writer = writable.getWriter();
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  let buffer = '';
+  let prevCompletion = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      if (buffer) {
+        writer.write(encoder.encode(buffer));
+      }
+      break;
+    }
+    const currentText = decoder.decode(value, { stream: true }); // stream: true is important here,fix the bug of incomplete line
+    // if meet new line, then write the buffer to the writer
+    if (currentText.startsWith('data: ')) {
+      if (buffer) {
+        const decodedLine = JSON.parse(buffer.slice(5));
+        const newCompletion = decodedLine['completion'].replace(
+          prevCompletion,
+          ''
+        );
+        const transformedLine = claudeToChatGPTResponse(
+          {
+            ...decodedLine,
+            completion: newCompletion,
+          },
+          true
+        );
+        writer.write(
+          encoder.encode(`data: ${JSON.stringify(transformedLine)}\n\n`)
+        );
+        prevCompletion = decodedLine['completion'];
+        buffer = '';
+      }
+    }
+    buffer += currentText;
+  }
+
+  await writer.close();
 }
 
 async function handleRequest(request) {
@@ -110,7 +165,6 @@ async function handleRequest(request) {
       stream,
     };
 
-    // 调用 Claude API
     const claudeResponse = await fetch(`${CLAUDE_BASE_URL}/v1/complete`, {
       method: 'POST',
       headers: {
@@ -120,14 +174,26 @@ async function handleRequest(request) {
       body: JSON.stringify(claudeRequestBody),
     });
 
-    const claudeResponseBody = await claudeResponse.json();
-
-    const openAIResponseBody = claudeToChatGPTResponse(claudeResponseBody);
-
-    return new Response(JSON.stringify(openAIResponseBody), {
-      status: claudeResponse.status,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    if (!stream) {
+      const claudeResponseBody = await claudeResponse.json();
+      const openAIResponseBody = claudeToChatGPTResponse(claudeResponseBody);
+      return new Response(JSON.stringify(openAIResponseBody), {
+        status: claudeResponse.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } else {
+      const { readable, writable } = new TransformStream();
+      streamJsonResponseBodies(claudeResponse, writable);
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': '*',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Credentials': 'true',
+        },
+      });
+    }
   } else {
     return new Response('Method not allowed', { status: 405 });
   }
@@ -139,6 +205,7 @@ function handleOPTIONS() {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': '*',
       'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Credentials': 'true',
     },
   });
 }
