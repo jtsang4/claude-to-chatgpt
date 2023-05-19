@@ -1,5 +1,5 @@
 <h4 align="right">
-  <strong>English</strong> | <a href="https://github.com/jtsang4/claude-to-chatgpt/blob/main/README_CN.md">简体中文</a>
+  <strong>English</strong> | <a href="https://github.com/jtsang4/claude-to-chatgpt/blob/main/README_CN.md">简体中文</a> | <a href="https://github.com/jtsang4/claude-to-chatgpt/blob/main/README_JA.md">日本語</a>
 </h4>
 
 <div>
