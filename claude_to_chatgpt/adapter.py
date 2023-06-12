@@ -74,15 +74,9 @@ class ClaudeAdapter:
             "object": "chat.completion.chunk",
             "created": int(time.time()),
             "model": "gpt-3.5-turbo-0301",
-            "usage": {
-                "prompt_tokens": 0,
-                "completion_tokens": completion_tokens,
-                "total_tokens": completion_tokens,
-            },
             "choices": [
                 {
                     "delta": {
-                        "role": "assistant",
                         "content": claude_response.get("completion", "").removeprefix(
                             prev_decoded_response.get("completion", "")
                         ),
