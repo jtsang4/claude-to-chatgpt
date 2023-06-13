@@ -68,7 +68,7 @@ class ClaudeAdapter:
         return claude_params
 
     def claude_to_chatgpt_response_stream(self, claude_response, prev_decoded_response):
-        completion_tokens = num_tokens_from_string(claude_response["completion"])
+        completion_tokens = num_tokens_from_string(claude_response.get("completion", ""))
         openai_response = {
             "id": f"chatcmpl-{str(time.time())}",
             "object": "chat.completion.chunk",
@@ -98,7 +98,7 @@ class ClaudeAdapter:
         return openai_response
 
     def claude_to_chatgpt_response(self, claude_response):
-        completion_tokens = num_tokens_from_string(claude_response["completion"])
+        completion_tokens = num_tokens_from_string(claude_response.get("completion", ""))
         openai_response = {
             "id": f"chatcmpl-{str(time.time())}",
             "object": "chat.completion",
@@ -131,7 +131,7 @@ class ClaudeAdapter:
         claude_params = self.openai_to_claude_params(openai_params)
         api_key = self.get_api_key(headers)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
             if not claude_params.get("stream", False):
                 response = await client.post(
                     f"{self.claude_base_url}/v1/complete",
