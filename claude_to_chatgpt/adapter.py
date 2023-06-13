@@ -131,7 +131,7 @@ class ClaudeAdapter:
         claude_params = self.openai_to_claude_params(openai_params)
         api_key = self.get_api_key(headers)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
             if not claude_params.get("stream", False):
                 response = await client.post(
                     f"{self.claude_base_url}/v1/complete",
