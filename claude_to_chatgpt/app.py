@@ -27,6 +27,11 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+async def hello():
+    return "hello claude server"
+
+
 @app.api_route(
     "/v1/chat/completions",
     methods=["POST", "OPTIONS"],
@@ -38,13 +43,12 @@ async def chat(request: Request):
         async def generate():
             async for response in adapter.chat(request):
                 if response == "[DONE]":
-                    yield "data: [DONE]"
+                    yield "data: [DONE]\n\n"
                     break
                 yield f"data: {json.dumps(response)}\n\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")
     else:
-        openai_response = None
         response = adapter.chat(request)
         openai_response = await response.__anext__()
         return JSONResponse(content=openai_response)
@@ -59,4 +63,4 @@ async def models(request: Request):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app:app", host="0.0.0.0", port=PORT, log_level=LOG_LEVEL)
+    uvicorn.run("app:app", host="0.0.0.0", port=int(PORT), log_level=LOG_LEVEL)
