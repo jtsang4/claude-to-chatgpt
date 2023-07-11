@@ -24,7 +24,7 @@
 
 - ✨ OpenAI ChatGPT API のように Claude API を呼び出す
 - 💦 ストリーミングレス対応
-- 🐻 `claude-v1.3`, `claude-v1.3-100k` のモデルをサポートする
+- 🐻 `claude-instant-1`, `claude-2` のモデルをサポートする
 - 🌩️ Cloudflare Workers や Docker でデプロイする
 
 ## はじめに
@@ -60,7 +60,7 @@ docker-compose up
 
 ### 使用方法
 
-モデルパラメータを `gpt-3.5-turbo` または `gpt-3.5-turbo-0301` と入力すると `claude-v1.3` に置換されます。
+モデルパラメータを `gpt-3.5-turbo` または `gpt-3.5-turbo-0613` と入力すると `claude-instant-1` に置換されます。
 
 #### GUI
 
@@ -88,7 +88,7 @@ Claude Completion API にはエンドポイント `/v1/complete` があり、以
 ```json
 {
   "prompt": "\n\nHuman: Hello, AI.\n\nAssistant: ",
-  "model": "claude-v1.3",
+  "model": "claude-instant-1",
   "max_tokens_to_sample": 100,
   "temperature": 1,
   "stream": true

@@ -42,7 +42,7 @@ class ClaudeAdapter:
         return prompt
 
     def openai_to_claude_params(self, openai_params):
-        model = model_map.get(openai_params["model"], "claude-v1.3-100k")
+        model = model_map.get(openai_params["model"], "claude-2")
         messages = openai_params["messages"]
 
         prompt = self.convert_messages_to_prompt(messages)
@@ -50,7 +50,7 @@ class ClaudeAdapter:
         claude_params = {
             "model": model,
             "prompt": prompt,
-            "max_tokens_to_sample": 100000 if model == "claude-v1.3-100k" else 9016,
+            "max_tokens_to_sample": 100000,
         }
 
         if openai_params.get("max_tokens"):
@@ -67,13 +67,14 @@ class ClaudeAdapter:
 
         return claude_params
 
-    def claude_to_chatgpt_response_stream(self, claude_response, prev_decoded_response):
-        completion_tokens = num_tokens_from_string(claude_response.get("completion", ""))
+    def claude_to_chatgpt_response_stream(self, claude_response):
+        completion = claude_response.get("completion", "")
+        completion_tokens = num_tokens_from_string(completion)
         openai_response = {
             "id": f"chatcmpl-{str(time.time())}",
             "object": "chat.completion.chunk",
             "created": int(time.time()),
-            "model": "gpt-3.5-turbo-0301",
+            "model": "gpt-3.5-turbo-0613",
             "usage": {
                 "prompt_tokens": 0,
                 "completion_tokens": completion_tokens,
@@ -83,9 +84,7 @@ class ClaudeAdapter:
                 {
                     "delta": {
                         "role": "assistant",
-                        "content": claude_response.get("completion", "").removeprefix(
-                            prev_decoded_response.get("completion", "")
-                        ),
+                        "content": completion,
                     },
                     "index": 0,
                     "finish_reason": stop_reason_map[claude_response.get("stop_reason")]
@@ -98,12 +97,14 @@ class ClaudeAdapter:
         return openai_response
 
     def claude_to_chatgpt_response(self, claude_response):
-        completion_tokens = num_tokens_from_string(claude_response.get("completion", ""))
+        completion_tokens = num_tokens_from_string(
+            claude_response.get("completion", "")
+        )
         openai_response = {
             "id": f"chatcmpl-{str(time.time())}",
             "object": "chat.completion",
             "created": int(time.time()),
-            "model": "gpt-3.5-turbo-0301",
+            "model": "gpt-3.5-turbo-0613",
             "usage": {
                 "prompt_tokens": 0,
                 "completion_tokens": completion_tokens,
@@ -137,7 +138,9 @@ class ClaudeAdapter:
                     f"{self.claude_base_url}/v1/complete",
                     headers={
                         "x-api-key": api_key,
+                        "accept": "application/json",
                         "content-type": "application/json",
+                        "anthropic-version": "2023-06-01",
                     },
                     json=claude_params,
                 )
@@ -152,30 +155,38 @@ class ClaudeAdapter:
                     f"{self.claude_base_url}/v1/complete",
                     headers={
                         "x-api-key": api_key,
+                        "accept": "application/json",
                         "content-type": "application/json",
+                        "anthropic-version": "2023-06-01",
                     },
                     json=claude_params,
                 ) as response:
                     if response.is_error:
                         raise Exception(f"Error: {response.status_code}")
-                    prev_decoded_line = {}
                     async for line in response.aiter_lines():
                         if line:
-                            if line == "data: [DONE]":
-                                yield "[DONE]"
-                                break
                             stripped_line = line.lstrip("data:")
                             if stripped_line:
                                 try:
                                     decoded_line = json.loads(stripped_line)
-                                    # yield decoded_line
-                                    openai_response = (
-                                        self.claude_to_chatgpt_response_stream(
-                                            decoded_line, prev_decoded_line
+                                    stop_reason = decoded_line.get("stop_reason")
+                                    if stop_reason:
+                                        yield self.claude_to_chatgpt_response_stream(
+                                            {
+                                                "completion": "",
+                                                "stop_reason": stop_reason,
+                                            }
                                         )
-                                    )
-                                    prev_decoded_line = decoded_line
-                                    yield openai_response
+                                        yield "[DONE]"
+                                    else:
+                                        completion = decoded_line.get("completion")
+                                        if completion:
+                                            openai_response = (
+                                                self.claude_to_chatgpt_response_stream(
+                                                    decoded_line
+                                                )
+                                            )
+                                            yield openai_response
                                 except json.JSONDecodeError as e:
                                     logger.debug(
                                         f"Error decoding JSON: {e}"

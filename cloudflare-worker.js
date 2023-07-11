@@ -45,7 +45,7 @@ function claudeToChatGPTResponse(claudeResponse, stream = false) {
   const result = {
     id: `chatcmpl-${timestamp}`,
     created: timestamp,
-    model: 'gpt-3.5-turbo-0301',
+    model: 'gpt-3.5-turbo-0613',
     usage: {
       prompt_tokens: 0,
       completion_tokens: completionTokens,
@@ -149,12 +149,12 @@ async function handleRequest(request) {
 
     const requestBody = await request.json();
     const { model, messages, temperature, stop, stream } = requestBody;
-    const claudeModel = model_map[model] || 'claude-v1.3-100k';
+    const claudeModel = model_map[model] || 'claude-2';
 
     // OpenAI API 转换为 Claude API
     const prompt = convertMessagesToPrompt(messages);
     let maxTokensToSample = 100000;
-    if (model !== 'claude-v1.3-100k') {
+    if (model !== 'claude-2') {
       maxTokensToSample = 9016;
     }
     const claudeRequestBody = {
@@ -237,7 +237,7 @@ const models_list = [
     parent: null,
   },
   {
-    id: 'gpt-3.5-turbo-0301',
+    id: 'gpt-3.5-turbo-0613',
     object: 'model',
     created: 1677649963,
     owned_by: 'openai',
@@ -257,7 +257,7 @@ const models_list = [
         is_blocking: false,
       },
     ],
-    root: 'gpt-3.5-turbo-0301',
+    root: 'gpt-3.5-turbo-0613',
     parent: null,
   },
   {
@@ -305,14 +305,14 @@ const models_list = [
         is_blocking: false,
       },
     ],
-    root: 'gpt-4-0314',
+    root: 'gpt-4-0613',
     parent: null,
   },
 ];
 
 const model_map = {
-  'gpt-3.5-turbo': 'claude-v1.3',
-  'gpt-3.5-turbo-0301': 'claude-v1.3',
-  'gpt-4': 'claude-v1.3-100k',
-  'gpt-4-0314': 'claude-v1.3-100k',
+  'gpt-3.5-turbo': 'claude-instant-1',
+  'gpt-3.5-turbo-0613': 'claude-instant-1',
+  'gpt-4': 'claude-2',
+  'gpt-4-0613': 'claude-2',
 };

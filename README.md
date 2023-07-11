@@ -24,7 +24,7 @@ This project converts the API of Anthropic's Claude model to the OpenAI Chat API
 
 * ✨ Call Claude API like OpenAI ChatGPT API
 * 💦 Support streaming response
-* 🐻 Support `claude-v1.3`, `claude-v1.3-100k` models
+* 🐻 Support `claude-instant-1`, `claude-2` models
 * 🌩️ Deploy by Cloudflare Workers or Docker
 
 ## Getting Started
@@ -61,7 +61,7 @@ The API will then be available at http://localhost:8000. API endpoint: `/v1/chat
 
 ### Usage
 
-When you input the model parameter as `gpt-3.5-turbo` or `gpt-3.5-turbo-0301`, it will be substituted with `claude-v1.3`. otherwise, `claude-v1.3-100k` will be utilized.
+When you input the model parameter as `gpt-3.5-turbo` or `gpt-3.5-turbo-0613`, it will be substituted with `claude-instant-1`. otherwise, `claude-2` will be utilized.
 
 
 #### GUI
@@ -90,7 +90,7 @@ The Claude Completion API has an endpoint `/v1/complete` which takes the followi
 ```json
 {
   "prompt": "\n\nHuman: Hello, AI.\n\nAssistant: ",
-  "model": "claude-v1.3",
+  "model": "claude-instant-1",
   "max_tokens_to_sample": 100,
   "temperature": 1,
   "stream": true

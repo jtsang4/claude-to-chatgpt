@@ -24,7 +24,7 @@
 
 * ✨ 以 OpenAI ChatGPT API 的方式调用 Claude API
 * 💦 支持流式响应，实现打印机效果
-* 🐻 支持 `claude-v1.3`，`claude-v1.3-100k` 模型
+* 🐻 支持 `claude-instant-1`，`claude-2` 模型
 * 🌩️ 通过 Cloudflare Workers 或 Docker 部署
 
 ## 开始使用
@@ -60,7 +60,7 @@ docker-compose up
 
 ### 使用方法
 
-当您将模型参数 `model` 为 `gpt-3.5-turbo` 或 `gpt-3.5-turbo-0301` 时，它将替换为 `claude-v1.3`。否则，将使用 `claude-v1.3-100k`。
+当您将模型参数 `model` 为 `gpt-3.5-turbo` 或 `gpt-3.5-turbo-0613` 时，它将替换为 `claude-instant-1`。否则，将使用 `claude-2`。
 
 
 #### 图形界面软件
@@ -89,7 +89,7 @@ Claude Completion API endpoint 为 `/v1/complete`，它接受以下请求格式�
 ```json
 {
   "prompt": "\n\nHuman: Hello, AI.\n\nAssistant: ",
-  "model": "claude-v1.3",
+  "model": "claude-instant-1",
   "max_tokens_to_sample": 100,
   "temperature": 1,
   "stream": true

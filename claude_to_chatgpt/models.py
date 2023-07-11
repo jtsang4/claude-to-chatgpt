@@ -24,7 +24,7 @@ models_list = [
         "parent": None,
     },
     {
-        "id": "gpt-3.5-turbo-0301",
+        "id": "gpt-3.5-turbo-0613",
         "object": "model",
         "created": 1677649963,
         "owned_by": "openai",
@@ -44,7 +44,7 @@ models_list = [
                 "is_blocking": False,
             }
         ],
-        "root": "gpt-3.5-turbo-0301",
+        "root": "gpt-3.5-turbo-0613",
         "parent": None,
     },
     {
@@ -72,7 +72,7 @@ models_list = [
         "parent": None,
     },
     {
-        "id": "gpt-4-0314",
+        "id": "gpt-4-0613",
         "object": "model",
         "created": 1678604601,
         "owned_by": "openai",
@@ -92,14 +92,14 @@ models_list = [
                 "is_blocking": False,
             }
         ],
-        "root": "gpt-4-0314",
+        "root": "gpt-4-0613",
         "parent": None,
     },
 ]
 
 model_map = {
-    "gpt-3.5-turbo": "claude-v1.3",
-    "gpt-3.5-turbo-0301": "claude-v1.3",
-    "gpt-4": "claude-v1.3-100k",
-    "gpt-4-0314": "claude-v1.3-100k",
+    "gpt-3.5-turbo": "claude-instant-1",
+    "gpt-3.5-turbo-0613": "claude-instant-1",
+    "gpt-4": "claude-2",
+    "gpt-4-0613": "claude-2",
 }
