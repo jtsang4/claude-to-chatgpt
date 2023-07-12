@@ -5,7 +5,8 @@ addEventListener('fetch', (event) => {
 });
 
 const CLAUDE_API_KEY = ''; // Optional: default claude api key if you don't want to pass it in the request header
-const CLAUDE_BASE_URL = 'https://api.anthropic.com';
+const CLAUDE_BASE_URL = 'https://api.anthropic.com'; // Change this if you are using a self-hosted endpoint
+const MAX_TOKENS = 9016; // Max tokens to sample, change it if you want to sample more tokens, maximum is 100000.
 
 const role_map = {
   system: 'Human',
@@ -166,7 +167,7 @@ async function handleRequest(request) {
       prompt,
       model: claudeModel,
       temperature,
-      max_tokens_to_sample: 9016,
+      max_tokens_to_sample: MAX_TOKENS,
       stop_sequences: stop,
       stream,
     };
