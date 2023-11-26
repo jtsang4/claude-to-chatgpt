@@ -120,7 +120,6 @@ async function streamJsonResponseBodies(response, writable) {
         writer.write(
           encoder.encode(`data: ${JSON.stringify(transformedLine)}\n\n`)
         );
-        buffer = '';
       } catch (e) {}
     }
   }
