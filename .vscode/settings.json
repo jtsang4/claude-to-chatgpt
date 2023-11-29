@@ -1,7 +1,8 @@
 {
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  "python.formatting.provider": "none",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "basic"
 }
