@@ -1,35 +1,12 @@
-const version = '0.4.0';
+const version = '0.6.0';
 
 addEventListener('fetch', (event) => {
   event.respondWith(handleRequest(event.request));
 });
 
 const CLAUDE_API_KEY = ''; // Optional: default claude api key if you don't want to pass it in the request header
-const CLAUDE_BASE_URL = 'https://api.anthropic.com'; // Change this if you are using a self-hosted endpoint
-const MAX_TOKENS = 9016; // Max tokens to sample, change it if you want to sample more tokens, maximum is 100000.
-
-const role_map = {
-  system: 'Human',
-  user: 'Human',
-  assistant: 'Assistant',
-};
-
-const stop_reason_map = {
-  stop_sequence: 'stop',
-  max_tokens: 'length',
-};
-
-function convertMessagesToPrompt(messages) {
-  let prompt = '';
-  for (const message of messages) {
-    const role = message['role'];
-    const content = message['content'];
-    const transformed_role = role_map[role] || 'Human';
-    prompt += `\n\n${transformed_role}: ${content}`;
-  }
-  prompt += '\n\nAssistant: ';
-  return prompt;
-}
+const CLAUDE_BASE_URL = 'https://api.anthropic.com/v1/messages'; // Changed to messages endpoint
+const MAX_TOKENS = 4096;
 
 function getAPIKey(headers) {
   const authorization = headers.authorization;
@@ -39,31 +16,80 @@ function getAPIKey(headers) {
   return CLAUDE_API_KEY;
 }
 
-function claudeToChatGPTResponse(claudeResponse, stream = false) {
-  const completion = claudeResponse['completion'];
+function formatStreamResponseJson(claudeResponse) {
+  switch (claudeResponse.type) {
+    case 'message_start':
+      return {
+        id: claudeResponse.message.id,
+        model: claudeResponse.message.model,
+        inputTokens: claudeResponse.message.usage.input_tokens,
+      };
+    case 'content_block_start':
+    case 'ping':
+      return null;
+    case 'content_block_delta':
+      return {
+        content: claudeResponse.delta.text,
+      };
+    case 'content_block_stop':
+      return null;
+    case 'message_delta':
+      return {
+        stopReason: claudeResponse.delta.stop_reason,
+        outputTokens: claudeResponse.usage.output_tokens,
+      };
+    case 'message_stop':
+      return null;
+    default:
+      return null;
+  }
+}
+
+function claudeToChatGPTResponse(claudeResponse, metaInfo, stream = false) {
   const timestamp = Math.floor(Date.now() / 1000);
-  const completionTokens = completion.split(' ').length;
+  const completionTokens = metaInfo.outputTokens || 0;
+  const promptTokens = metaInfo.inputTokens || 0;
+  if (metaInfo.stopReason && stream) {
+    return {
+      id: metaInfo.id,
+      object: 'chat.completion.chunk',
+      created: timestamp,
+      model: metaInfo.model,
+      choices: [
+        {
+          index: 0,
+          delta: {},
+          logprobs: null,
+          finish_reason: 'stop',
+        },
+      ],
+      usage: {
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: promptTokens + completionTokens,
+      },
+    };
+  }
+  const content = claudeResponse.content;
   const result = {
-    id: `chatcmpl-${timestamp}`,
+    id: metaInfo.id || 'unknown',
     created: timestamp,
-    model: 'gpt-3.5-turbo-0613',
+    model: metaInfo.model,
     usage: {
-      prompt_tokens: 0,
+      prompt_tokens: promptTokens,
       completion_tokens: completionTokens,
-      total_tokens: completionTokens,
+      total_tokens: promptTokens + completionTokens,
     },
     choices: [
       {
         index: 0,
-        finish_reason: claudeResponse['stop_reason']
-          ? stop_reason_map[claudeResponse['stop_reason']]
-          : null,
+        finish_reason: metaInfo.stopReason === 'end_turn' ? 'stop' : null,
       },
     ],
   };
   const message = {
     role: 'assistant',
-    content: completion,
+    content: content || '',
   };
   if (!stream) {
     result.object = 'chat.completion';
@@ -75,7 +101,7 @@ function claudeToChatGPTResponse(claudeResponse, stream = false) {
   return result;
 }
 
-async function streamJsonResponseBodies(response, writable) {
+async function streamJsonResponseBodies(response, writable, model) {
   const reader = response.body.getReader();
   const writer = writable.getWriter();
 
@@ -83,6 +109,9 @@ async function streamJsonResponseBodies(response, writable) {
   const decoder = new TextDecoder();
 
   let buffer = '';
+  const metaInfo = {
+    model,
+  };
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
@@ -90,37 +119,36 @@ async function streamJsonResponseBodies(response, writable) {
       break;
     }
     const currentText = decoder.decode(value, { stream: true }); // stream: true is important here,fix the bug of incomplete line
-    buffer += currentText.replace(/event: (completion|ping)\s*|\r/gi,'');
-    const substr = buffer.split('\n\n'), lastMsg = substr.length - 1;
-    0 !== substr[lastMsg].length ? buffer = substr[lastMsg] : buffer = '';
-    // if meet new line, then write the buffer to the writer
-    for (let i = 0; i < lastMsg; i++) {
+    buffer += currentText;
+    console.log('🚀 ~ streamJsonResponseBodies ~ buffer:', buffer);
+    const regex = /event:\s*.*?\s*\ndata:\s*(.*?)(?=\n\n|\s*$)/gs;
+
+    let match;
+    while ((match = regex.exec(buffer)) !== null) {
       try {
-        const decodedLine = JSON.parse(substr[i].slice(5));
-        const completion = decodedLine['completion'];
-        const stop_reason = decodedLine['stop_reason'];
-        let transformedLine = {};
-        if (stop_reason) {
-          transformedLine = claudeToChatGPTResponse(
-            {
-              completion: '',
-              stop_reason: stop_reason,
-            },
-            true
-          );
-        } else {
-          transformedLine = claudeToChatGPTResponse(
-            {
-              ...decodedLine,
-              completion: completion,
-            },
-            true
-          );
+        const decodedLine = JSON.parse(match[1].trim());
+        const formatedChunk = formatStreamResponseJson(decodedLine);
+        if (formatedChunk === null) {
+          continue;
         }
+        metaInfo.id = formatedChunk.id ?? metaInfo.id;
+        metaInfo.model = formatedChunk.model ?? metaInfo.model;
+        metaInfo.inputTokens =
+          formatedChunk.inputTokens ?? metaInfo.inputTokens;
+        metaInfo.outputTokens =
+          formatedChunk.outputTokens ?? metaInfo.outputTokens;
+        metaInfo.stopReason = formatedChunk.stopReason ?? metaInfo.stopReason;
+        const transformedLine = claudeToChatGPTResponse(
+          formatedChunk,
+          metaInfo,
+          true
+        );
         writer.write(
           encoder.encode(`data: ${JSON.stringify(transformedLine)}\n\n`)
         );
       } catch (e) {}
+      // 从buffer中移除已处理的部分
+      buffer = buffer.slice(match.index + match[0].length);
     }
   }
   await writer.close();
@@ -155,23 +183,23 @@ async function handleRequest(request) {
 
     const requestBody = await request.json();
     const { model, messages, temperature, stop, stream } = requestBody;
-    const claudeModel = model_map[model] || 'claude-2';
+    const claudeModel = model;
 
-    // OpenAI API 转换为 Claude API
-    const prompt = convertMessagesToPrompt(messages);
+    // Convert OpenAI API request to Claude API request
+    const systemMessage = messages.find((message) => message.role === 'system');
     const claudeRequestBody = {
-      prompt,
       model: claudeModel,
+      messages: messages.filter((message) => message.role !== 'system'),
       temperature,
-      max_tokens_to_sample: MAX_TOKENS,
+      max_tokens: MAX_TOKENS,
       stop_sequences: stop,
+      system: systemMessage?.content,
       stream,
     };
 
-    const claudeResponse = await fetch(`${CLAUDE_BASE_URL}/v1/complete`, {
+    const claudeResponse = await fetch(CLAUDE_BASE_URL, {
       method: 'POST',
       headers: {
-        accept: 'application/json',
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
@@ -181,12 +209,34 @@ async function handleRequest(request) {
 
     if (!stream) {
       const claudeResponseBody = await claudeResponse.json();
-      const openAIResponseBody = claudeToChatGPTResponse(claudeResponseBody);
+      const formatedResult = {
+        id: claudeResponseBody.id,
+        model: claudeResponseBody.model,
+        inputTokens: claudeResponseBody.usage.input_tokens,
+        outputTokens: claudeResponseBody.usage.output_tokens,
+        stopReason: claudeResponseBody.stop_reason,
+      };
+      const openAIResponseBody = claudeToChatGPTResponse(
+        { content: claudeResponseBody.content[0].text },
+        formatedResult
+      );
+      if (openAIResponseBody === null) {
+        return new Response('Error processing Claude response', {
+          status: 500,
+        });
+      }
       return new Response(JSON.stringify(openAIResponseBody), {
         status: claudeResponse.status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': '*',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Credentials': 'true',
+        },
       });
     } else {
+      // Implement streaming logic here
       const { readable, writable } = new TransformStream();
       streamJsonResponseBodies(claudeResponse, writable);
       return new Response(readable, {
@@ -313,10 +363,3 @@ const models_list = [
     parent: null,
   },
 ];
-
-const model_map = {
-  'gpt-3.5-turbo': 'claude-instant-1',
-  'gpt-3.5-turbo-0613': 'claude-instant-1',
-  'gpt-4': 'claude-2',
-  'gpt-4-0613': 'claude-2',
-};
