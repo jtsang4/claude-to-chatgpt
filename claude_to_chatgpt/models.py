@@ -97,9 +97,9 @@ models_list = [
     },
 ]
 
-model_map = {
-    "gpt-3.5-turbo": "claude-instant-1",
-    "gpt-3.5-turbo-0613": "claude-instant-1",
-    "gpt-4": "claude-2",
-    "gpt-4-0613": "claude-2",
+openai_model_aliases = {
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-0613",
+    "gpt-4",
+    "gpt-4-0613",
 }
